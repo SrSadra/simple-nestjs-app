@@ -22,7 +22,9 @@ export class UserRepository {
       }
 
       async getUser(params: Prisma.UserWhereInput): Promise<User>{
-        return await this.prisma.user.findFirst({where : params});
+        const user = await this.prisma.user.findFirst({where : params});
+        // delete user?.password;
+        return user;
       }
     
       async updateUser(params: {

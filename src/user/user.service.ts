@@ -5,27 +5,36 @@ import * as bcrypt from "bcrypt"
 import { UserCreateDto } from 'src/dtos/user-create.dto';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
-    constructor(private userRep : UserRepository, private configSer : ConfigService){}
+    constructor(private userRep : UserRepository, private configSer : ConfigService,private jwtSer : JwtService){}
 
     async login(user : Readonly<UserLoginDto>){
         try{
+          
             const {email, password } = user;
             const foundedUser = await this.userRep.getUser({email});
             if (!foundedUser){
               throw new HttpException('Incorrect email/password', HttpStatus.UNAUTHORIZED);
             }
-            const validate = this.validatePassword(password,foundedUser.password);
+            const validate = await this.validatePassword(password,foundedUser.password);
             if (!validate){
               throw new HttpException('Incorrect email/password', HttpStatus.UNAUTHORIZED);
             }
         
             delete foundedUser.password; // for more security
-            return foundedUser;
-          }catch{
-            throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+
+            const token = await this.jwtSer.signAsync({user : foundedUser});
+            console.log(token);
+            return token;
+            // return foundedUser;
+          }catch (err){
+            if (err instanceof HttpException){
+              throw err;
+            }
+            throw err;
           }
     }
 
@@ -33,21 +42,27 @@ export class UserService {
         try{
           const {email , password } = createUser;
           const user = await this.userRep.getUser({email});
-          if (user){
+          if (!user){
             const hashed = await this.hashPassword(password);
+            console.log(hashed);
             const user = await this.userRep.createUser({
               ...createUser,
               password : hashed
             });
+            console.log(user);
     
             delete user.password;
+
             return user;
           }
           else {
             throw new HttpException('Email is already in use', HttpStatus.CONFLICT);
           }
-        }catch{
-          throw new HttpException('Email is already in use', HttpStatus.CONFLICT);
+        }catch (err){
+          if (err instanceof HttpException){
+            throw err;
+          }
+          throw new HttpException('Internal Server Error' , HttpStatus.INTERNAL_SERVER_ERROR);
         }
       }
 
@@ -60,11 +75,28 @@ export class UserService {
     }
 
     async findUserById(id: number): Promise<User>{
-        return await this.userRep.getUser({id});
+      try {
+        const user =  await this.userRep.getUser({id});
+        if (!user){
+          throw new HttpException('User doesnt exist', HttpStatus.NOT_FOUND);
+        }
+        else{
+          delete user.password;
+          return user;
+        }
+      }catch (err){
+        if (err instanceof HttpException){
+          throw err;
+        }
+        throw new HttpException('Internal Server Error' , HttpStatus.INTERNAL_SERVER_ERROR);
+      }
     }
 
     private async hashPassword(password: string): Promise<string> {
-        const salt = this.configSer.get("BCRYPT_SALT")
-        return await bcrypt.hash(password, salt);
+        const salt = Number(this.configSer.get("BCRYPT_SALT"));
+        console.log(salt);
+        const tmp = await bcrypt.hash(password, salt);
+        console.log(tmp);
+        return tmp;
       }
 }

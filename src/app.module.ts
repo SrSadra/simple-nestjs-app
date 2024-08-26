@@ -9,7 +9,7 @@ import { PostModule } from './post/post.module';
 
 @Module({
   imports: [PrismaModule, UserModule, ConfigModule.forRoot({isGlobal : true}), PostModule],
-  controllers: [AppController, PostController],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

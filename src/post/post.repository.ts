@@ -1,8 +1,9 @@
+import { Injectable } from "@nestjs/common";
 import { User, Prisma, Post } from "@prisma/client";
 import { PostCreateDto } from "src/dtos/post-create.dto";
 import { PrismaService } from "src/prisma/prisma.service";
 
-
+@Injectable()
 export class PostRepository {
     constructor(private prisma : PrismaService){}
 

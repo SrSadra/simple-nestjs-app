@@ -10,3 +10,5 @@ npm i bcrypt
 npm i -D @types/bcrypt // for hashing password
 
 npm i --save @nestjs/config // to use env variable in app
+
+npm i passport passport-jwt @nestjs/passport @nestjs/jwt // to use guard protection before reaching route handler

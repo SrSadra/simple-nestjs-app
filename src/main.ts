@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe()); // to use validator
+  app.useGlobalPipes(new ValidationPipe({transform : true})); // to use validator
   await app.listen(3000);
 }
 bootstrap();
